@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <Servo.h>
 float maxTime = 100;
 const int redLEDPin_buzzer = 5;       // Pin pentru LED-ul roșu
 const int redLEDPin_culori = 6;             // Red LED pin
@@ -349,8 +350,11 @@ void playMorseMessage(const char *morseMessage) {
 const int greenPIN_fire = 47; // Pinul pentru LED
 const int checkPins_fire[6] = {46, 49, 50, 51, 52, 53}; // Pinii pentru verificare
 const int expectedValues_fire[6] = {HIGH, HIGH, LOW, HIGH, LOW, LOW}; // Valorile așteptate când firele sunt deconectate
-
+bool oneTimeRed = true;
+int firegresite = 0;
 void fire_module() {
+  Serial.println(firegresite);
+  int counter = 0;
   bool redLight = false;
   bool shouldLightUp = true;
   for (int i = 0; i < 6; i++) {
@@ -361,6 +365,7 @@ void fire_module() {
     // Serial.println("");
     if (pinValue != expectedValues_fire[i] && pinValue == HIGH) {
       redLight = true;
+      counter ++;
       // break;
     }
     if (pinValue != expectedValues_fire[i]) {
@@ -373,15 +378,25 @@ void fire_module() {
     digitalWrite(greenPIN_fire, HIGH);
   }
   // Serial.println("--");
-  if (redLight) {
-    digitalWrite(redLEDPin_buzzer, HIGH); 
+  if (redLight && counter > firegresite) {
+    firegresite = counter;
+    lightUPRed();
+    oneTimeRed = false;
+    // digitalWrite(redLEDPin_buzzer, HIGH); 
     Serial.println("All connections correct. LED ON.");
   } 
 }
 
+int pos = 0;
+bool steag = true;
+Servo servo;
 
 void loop() {
   if (redButon || timeRanOut || (greenButon && greenFire && greenBuzzer && greenCulori)) {
+    if(steag) {
+      steag = false;
+      servo.write(40);
+    }
     return;
   }
   colors_module();
@@ -393,6 +408,8 @@ void loop() {
 
 
 void setup() {
+  servo.attach(9);
+  servo.write(120);
   Serial.begin(9600);
   digitalWrite(greenLEDPin_buton, LOW);
   for (int i = 0; i < 3; i++) {
