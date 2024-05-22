@@ -186,9 +186,167 @@ void buton_module() {
   }
 }
 
+//----------------morse module
+const int buzzerPin_buzzer = A5;
+const int buttonPin_buzzer = A2;        // Pin pentru butonul principal
+const int resetButtonPin_buzzer = A3;   // Pin pentru butonul de resetare
+const int submitButtonPin_buzzer = A4;  // Pin pentru butonul de trimitere
+const int greenLEDPin_buzzer = A1;      // Pin pentru LED-ul verde
+const int redLEDPin_buzzer = A0;       // Pin pentru LED-ul roșu
+const int correctPressCount_buzzer = 5; // Numărul corect de apăsări pentru validare
+int buttonPressCount_buzzer = 0;
+bool playMessage = true;
+bool submitPress_buzzer = true;
+bool countPress_buzzer = true;
+bool resetPress_buzzer = true;
+enum MorseState {IDLE, DOT, DASH, LETTER_SPACE, DOT_SPACE, DASH_SPACE};
+MorseState currentState = IDLE;
+int messageIndex = 0;
+void buzzer_module() {
+  
+    playMorseMessage(".... . .-.. .-.. ---");
+  
+  // Check the main button press
+  if (digitalRead(buttonPin_buzzer) == LOW && countPress_buzzer == false) {
+    countPress_buzzer = true;
+    buttonPressCount_buzzer++;
+    Serial.print("Button pressed. Count: ");
+    Serial.println(buttonPressCount_buzzer);
+    delay(200); // Debounce delay
+  }
+  if (digitalRead(buttonPin_buzzer) == HIGH) {
+    countPress_buzzer = false;
+  }
+
+  // Check the reset button press
+  if (digitalRead(resetButtonPin_buzzer) == LOW && resetPress_buzzer == false) {
+    resetPress_buzzer = true;
+    buttonPressCount_buzzer = 0;
+    Serial.println("Counter reset.");
+    currentState = IDLE;
+    messageIndex = 0;
+    delay(200); // Debounce delay
+  }
+  if (digitalRead(resetButtonPin_buzzer) == HIGH) {
+    resetPress_buzzer = false;
+  }
+
+  // Check the submit button press
+  if (digitalRead(submitButtonPin_buzzer) == LOW && submitPress_buzzer == false) {
+    submitPress_buzzer = true;
+    if (buttonPressCount_buzzer == correctPressCount_buzzer) {
+      digitalWrite(greenLEDPin_buzzer, HIGH);
+      Serial.println("Correct! Green LED ON.");
+    } else {
+      digitalWrite(redLEDPin_buzzer, HIGH);
+      buttonPressCount_buzzer = 0;
+      Serial.println("Incorrect. Red LED ON.");
+    }
+    delay(200); // Debounce delay
+  }
+  if (digitalRead(submitButtonPin_buzzer) == HIGH) {
+    submitPress_buzzer = false;
+  }
+}
+
+unsigned long previousMillis = 0; // Store the last time an action was performed
+unsigned long interval = 0; // Interval for the current action
+
+
+void playMorseMessage(const char *morseMessage) {
+  unsigned long currentMillis = millis();
+  
+  switch (currentState) {
+    case IDLE:
+      if (morseMessage[messageIndex] != '\0') {
+        if (morseMessage[messageIndex] == '.') {
+          tone(buzzerPin_buzzer, 1000); // Sound for dot
+          interval = 200; // Duration of dot
+          currentState = DOT;
+        } else if (morseMessage[messageIndex] == '-') {
+          tone(buzzerPin_buzzer, 1000); // Sound for dash
+          interval = 600; // Duration of dash
+          currentState = DASH;
+        } else if (morseMessage[messageIndex] == ' ') {
+          interval = 700; // Pause between letters
+          currentState = LETTER_SPACE;
+        }
+        previousMillis = currentMillis;
+      } else {
+        // Message finished
+        currentState = IDLE;
+      }
+      break;
+
+    case DOT:
+      if (currentMillis - previousMillis >= interval) {
+        noTone(buzzerPin_buzzer);
+        interval = 200; // Pause between dots/dashes
+        currentState = DOT_SPACE;
+        previousMillis = currentMillis;
+      }
+      break;
+
+    case DASH:
+      if (currentMillis - previousMillis >= interval) {
+        noTone(buzzerPin_buzzer);
+        interval = 200; // Pause between dots/dashes
+        currentState = DASH_SPACE;
+        previousMillis = currentMillis;
+      }
+      break;
+
+    case DOT_SPACE:
+    case DASH_SPACE:
+      if (currentMillis - previousMillis >= interval) {
+        messageIndex++;
+        currentState = IDLE;
+      }
+      break;
+
+    case LETTER_SPACE:
+      if (currentMillis - previousMillis >= interval) {
+        messageIndex++;
+        currentState = IDLE;
+      }
+      break;
+  }
+}
+
+//---------fire module
+const int greenPIN_fire = 47; // Pinul pentru LED
+const int checkPins_fire[7] = {46, 48, 49, 50, 51, 52, 53}; // Pinii pentru verificare
+const int expectedValues_fire[7] = {HIGH, LOW, HIGH, LOW, HIGH, LOW, LOW}; // Valorile așteptate când firele sunt deconectate
+
+void fire_module() {
+  bool allCorrect = true;
+
+  for (int i = 0; i < 7; i++) {
+    int pinValue = digitalRead(checkPins_fire[i]);
+    Serial.print(expectedValues_fire[i]);
+    Serial.print(" ");
+    Serial.print(pinValue);
+    Serial.println("");
+    if (pinValue != expectedValues_fire[i] && pinValue == HIGH) {
+      Serial.print("Firul gresit e: ");
+      Serial.println(i);
+      allCorrect = false;
+      // break;
+    }
+  }
+  Serial.println("--");
+  if (allCorrect) {
+    digitalWrite(greenPIN_fire, HIGH); // Aprinde LED-ul dacă toate firele sunt deconectate
+    Serial.println("All connections correct. LED ON.");
+  } 
+}
+
+
 void loop() {
   colors_module();
   buton_module();
+  // buzzer_module();
+  fire_module();
 }
 
 
@@ -229,5 +387,19 @@ void setup() {
       startTime_buton = millis();  // Start the timer
       timerRunning = true;
     }
+
+  //morse module
+  pinMode(resetButtonPin_buzzer, INPUT_PULLUP);
+  pinMode(buttonPin_buzzer, INPUT_PULLUP);
+  pinMode(submitButtonPin_buzzer, INPUT_PULLUP);
+  pinMode(buzzerPin_buzzer, OUTPUT);
+  pinMode(greenLEDPin_buzzer, OUTPUT);
+  pinMode(redLEDPin_buzzer, OUTPUT);
+
+  //fire module
+  pinMode(greenPIN_fire, OUTPUT);
+  for (int i = 0; i < 7; i++) {
+    pinMode(checkPins_fire[i], INPUT_PULLUP); // Setează pinii de verificare ca intrări cu rezistență internă de pull-up
+  }
 }
 
