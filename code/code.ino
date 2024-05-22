@@ -1,17 +1,40 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 float maxTime = 100;
+const int redLEDPin_buzzer = 5;       // Pin pentru LED-ul roșu
+const int redLEDPin_culori = 6;             // Red LED pin
+const int redLEDPin_buton = 12;     // Red LED pin
+bool redBuzzer = false;
+bool redCulori = false;
+bool redButon = false;
+bool timeRanOut = false;
+bool greenBuzzer = false;
+bool greenCulori = false;
+bool greenButon = false;
+bool greenFire = false;
 
+
+void lightUPRed() {
+  if(redBuzzer == false) {
+      digitalWrite(redLEDPin_buzzer, HIGH);
+      redBuzzer = true;
+  } else if (redCulori == false) {
+    digitalWrite(redLEDPin_culori, HIGH);
+    redCulori = true;
+  } else if (redButon == false) {
+    digitalWrite(redLEDPin_buton, HIGH);
+    redButon = true;
+  }
+}
 
 //-----------culori_module
 unsigned long startTime;
 bool rgblight = true;
 
-const int buttonPins[3] = {2, 3, 4}; // Push button pins for sequence input
-const int resetButtonPin_culori = 7;        // Reset button pin
-const int redLEDPin_culori = 5;             // Red LED pin
-const int greenLEDPin_culori = 6;           // Green LED pin
-const int rgbPins[3] = {9, 10, 11};  // RGB LED pins
+const int buttonPins[3] = {36, 34, 32}; // Push button pins for sequence input
+const int resetButtonPin_culori = 30;        // Reset button pin
+const int greenLEDPin_culori = 28;           // Green LED pin
+const int rgbPins[3] = {37, 35, 33};  // RGB LED pins
 
 int sequence[8];       // Stores the random sequence of 8 colors
 int userSequence[8];   // Stores the user's input sequence
@@ -139,10 +162,13 @@ void colors_module() {
 
     // Light up the corresponding LED based on the result
     if (!correct) {
-      digitalWrite(greenLEDPin_culori, HIGH);
+      lightUPRed();
+     
 
     } else {
-      digitalWrite(redLEDPin_culori, HIGH);
+      greenCulori = true;
+      digitalWrite(greenLEDPin_culori, HIGH);
+      // digitalWrite(redLEDPin_culori, HIGH);
     }
 
     // Reset for the next round
@@ -155,7 +181,6 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 const int buttonPin_buton = 8;     // Push button pin
 const int greenLEDPin_buton = 13;   // Green LED pin
-const int redLEDPin_buton = 12;     // Red LED pin
 
 unsigned long startTime_buton;     // Start time of the timer
 bool timerRunning = false;   // Timer state
@@ -168,16 +193,22 @@ void buton_module() {
   float seconds = maxTime - currentTime / 1000;
   // Display the timer on the LCD
   lcd.setCursor(8, 0);
-  lcd.print(seconds);
+  if(seconds <= 0.00) {
+    timeRanOut = true;
+    lcd.print("0.00");
+  } else
+    lcd.print(seconds);
 
   // Check if button is pressed
   if (buttonState == LOW && buttonPress_button == false) {
     buttonPress_button = true;
     // Check if the timer contains the number '2'
     if (String(seconds).indexOf('2') != -1) {
+      greenButon = true;
       digitalWrite(greenLEDPin_buton, HIGH);
     } else {
-      digitalWrite(redLEDPin_buton, HIGH);
+      lightUPRed();
+      // digitalWrite(redLEDPin_buton, HIGH);
     }
     delay(200);
   }
@@ -192,7 +223,6 @@ const int buttonPin_buzzer = A2;        // Pin pentru butonul principal
 const int resetButtonPin_buzzer = A3;   // Pin pentru butonul de resetare
 const int submitButtonPin_buzzer = A4;  // Pin pentru butonul de trimitere
 const int greenLEDPin_buzzer = A1;      // Pin pentru LED-ul verde
-const int redLEDPin_buzzer = A0;       // Pin pentru LED-ul roșu
 const int correctPressCount_buzzer = 5; // Numărul corect de apăsări pentru validare
 int buttonPressCount_buzzer = 0;
 bool playMessage = true;
@@ -236,9 +266,11 @@ void buzzer_module() {
     submitPress_buzzer = true;
     if (buttonPressCount_buzzer == correctPressCount_buzzer) {
       digitalWrite(greenLEDPin_buzzer, HIGH);
+      greenBuzzer = true;
       Serial.println("Correct! Green LED ON.");
     } else {
-      digitalWrite(redLEDPin_buzzer, HIGH);
+      lightUPRed();
+      // digitalWrite(redLEDPin_buzzer, HIGH);
       buttonPressCount_buzzer = 0;
       Serial.println("Incorrect. Red LED ON.");
     }
@@ -315,37 +347,46 @@ void playMorseMessage(const char *morseMessage) {
 
 //---------fire module
 const int greenPIN_fire = 47; // Pinul pentru LED
-const int checkPins_fire[7] = {46, 48, 49, 50, 51, 52, 53}; // Pinii pentru verificare
-const int expectedValues_fire[7] = {HIGH, LOW, HIGH, LOW, HIGH, LOW, LOW}; // Valorile așteptate când firele sunt deconectate
+const int checkPins_fire[6] = {46, 49, 50, 51, 52, 53}; // Pinii pentru verificare
+const int expectedValues_fire[6] = {HIGH, HIGH, LOW, HIGH, LOW, LOW}; // Valorile așteptate când firele sunt deconectate
 
 void fire_module() {
-  bool allCorrect = true;
-
-  for (int i = 0; i < 7; i++) {
+  bool redLight = false;
+  bool shouldLightUp = true;
+  for (int i = 0; i < 6; i++) {
     int pinValue = digitalRead(checkPins_fire[i]);
-    Serial.print(expectedValues_fire[i]);
-    Serial.print(" ");
-    Serial.print(pinValue);
-    Serial.println("");
+    // Serial.print(expectedValues_fire[i]);
+    // Serial.print(" ");
+    // Serial.print(pinValue);
+    // Serial.println("");
     if (pinValue != expectedValues_fire[i] && pinValue == HIGH) {
-      Serial.print("Firul gresit e: ");
-      Serial.println(i);
-      allCorrect = false;
+      redLight = true;
+      // break;
+    }
+    if (pinValue != expectedValues_fire[i]) {
+      shouldLightUp = false;
       // break;
     }
   }
-  Serial.println("--");
-  if (allCorrect) {
-    digitalWrite(greenPIN_fire, HIGH); // Aprinde LED-ul dacă toate firele sunt deconectate
+  if(shouldLightUp) {
+    greenFire = true;
+    digitalWrite(greenPIN_fire, HIGH);
+  }
+  // Serial.println("--");
+  if (redLight) {
+    digitalWrite(redLEDPin_buzzer, HIGH); 
     Serial.println("All connections correct. LED ON.");
   } 
 }
 
 
 void loop() {
+  if (redButon || timeRanOut || (greenButon && greenFire && greenBuzzer && greenCulori)) {
+    return;
+  }
   colors_module();
   buton_module();
-  // buzzer_module();
+  buzzer_module();
   fire_module();
 }
 
@@ -398,7 +439,7 @@ void setup() {
 
   //fire module
   pinMode(greenPIN_fire, OUTPUT);
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 6; i++) {
     pinMode(checkPins_fire[i], INPUT_PULLUP); // Setează pinii de verificare ca intrări cu rezistență internă de pull-up
   }
 }
