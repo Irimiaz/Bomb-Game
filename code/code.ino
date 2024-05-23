@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
-float maxTime = 150;
+float maxTime = 180;
 float seconds = 0;
 const int redLEDPin_buzzer = 5;       // Pin pentru LED-ul roșu
 const int redLEDPin_culori = 6;             // Red LED pin
@@ -149,7 +149,7 @@ void culori_module_difficulty() {
     buttonPins[0] = G;
     buttonPins[1] = B;
     buttonPins[2] = R;
-    // Serial.println("1");
+    //  Serial.println("1");
   } else if (seconds >= 90) {
     // Serial.println("2");
     buttonPins[0] = R;
@@ -202,8 +202,8 @@ void colors_module() {
       if (digitalRead(buttonPins[i]) == LOW && buttonPress[i] == false && millis() >= buttonTimeNow + period) {
         buttonPress[i] = true;
         if(buttonPress[i]) {
-          Serial.print("User pressed button: ");
-          Serial.println(i);
+          // Serial.print("User pressed button: ");
+          // Serial.println(i);
           userSequence[userIndex] = i;
           userIndex++;
           buttonTimeNow += period;
@@ -221,10 +221,13 @@ void colors_module() {
   if (userIndex == 8) {
     bool correct = true;
     for (int i = 0; i < 8; i++) {
-      Serial.println(userSequence[i]);
-      Serial.println(sequence[i]);
-      Serial.println();
+      // Serial.println(userSequence[i]);
+      // Serial.println(sequence[i]);
+      // Serial.println();
       if (userSequence[i] != sequence[i]) {
+        // Serial.println(buttonPins[userSequence[i]]);
+        // Serial.println(buttonPins[sequence[i]]);
+        // Serial.println();
         correct = false;
         break;
       }
@@ -324,11 +327,11 @@ char message[100];
 int messageIndexMorse;
 void randomMessageMorse() {
   char messages[5][100];
-  strcpy(messages[0], "- - . ... --..");
-  strcpy(messages[1],"... -.- .. .");
-  strcpy(messages[2], "-- . . - .. --.");
-  strcpy(messages[3], "- - . . .. -. ..");
-  strcpy(messages[4], "- .-.. - ...");
+  strcpy(messages[0], "--....--..");
+  strcpy(messages[1],"...-.-...");
+  strcpy(messages[2], "--..-..--");
+  strcpy(messages[3], "--....-...");
+  strcpy(messages[4], "-.-..-...");
   randomSeed(analogRead(0));
   messageIndexMorse = random(0, 5);
   strcpy(message, messages[messageIndexMorse]);
@@ -346,7 +349,6 @@ int countMorseLines() {
 }
 
 void buzzer_module() {
-  Serial.println(messageIndexMorse);
   if (messageIndexMorse == 0) {
     correctPressCount_buzzer = 4;
   } else if (messageIndexMorse == 1) {
