@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
-float maxTime = 100;
+float maxTime = 150;
 float seconds = 0;
 const int redLEDPin_buzzer = 5;       // Pin pentru LED-ul roșu
 const int redLEDPin_culori = 6;             // Red LED pin
@@ -145,12 +145,12 @@ bool buttonPress[3] = {false, false, false};
 int buttonTimeNow = 0;
 
 void culori_module_difficulty() {
-  if (seconds >= 80) {
+  if (seconds >= 120) {
     buttonPins[0] = G;
     buttonPins[1] = B;
     buttonPins[2] = R;
     // Serial.println("1");
-  } else if (seconds >= 50) {
+  } else if (seconds >= 90) {
     // Serial.println("2");
     buttonPins[0] = R;
     buttonPins[1] = B;
