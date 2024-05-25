@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
-float maxTime = 180;
+float maxTime = 150;
 float seconds = 0;
 const int redLEDPin_buzzer = 5;       // Pin pentru LED-ul roșu
 const int redLEDPin_culori = 6;             // Red LED pin
@@ -42,9 +42,9 @@ void lightUPRed() {
 unsigned long startTime;
 bool rgblight = true;
 
-int R = 36;
+int R = 32;
 int G = 34;
-int B = 32;
+int B = 36;
 int buttonPins[3] = {R, G, B}; // Push button pins for sequence input
 const int resetButtonPin_culori = 30;        // Reset button pin
 const int greenLEDPin_culori = 28;           // Green LED pin
@@ -146,25 +146,25 @@ int buttonTimeNow = 0;
 
 void culori_module_difficulty() {
   if (seconds >= 120) {
-    buttonPins[0] = G;
-    buttonPins[1] = B;
-    buttonPins[2] = R;
+    buttonPins[0] = R;
+    buttonPins[1] = G;
+    buttonPins[2] = B;
     //  Serial.println("1");
   } else if (seconds >= 90) {
     // Serial.println("2");
-    buttonPins[0] = R;
-    buttonPins[1] = B;
-    buttonPins[2] = G;
-  } else if (countLedON() == 1) {
-    // Serial.println("3");
-    buttonPins[0] = B;
-    buttonPins[1] = G;
-    buttonPins[2] = R;
-  } else if(!redBuzzer) {
-    // Serial.println("4");
     buttonPins[0] = G;
     buttonPins[1] = R;
     buttonPins[2] = B;
+  } else if (countLedON() == 1) {
+    // Serial.println("3");
+    buttonPins[0] = R;
+    buttonPins[1] = B;
+    buttonPins[2] = G;
+  } else if(!redBuzzer) {
+    // Serial.println("4");
+    buttonPins[0] = B;
+    buttonPins[1] = G;
+    buttonPins[2] = R;
   } else {
     // Serial.println("5");
     buttonPins[0] = B;
@@ -202,8 +202,8 @@ void colors_module() {
       if (digitalRead(buttonPins[i]) == LOW && buttonPress[i] == false && millis() >= buttonTimeNow + period) {
         buttonPress[i] = true;
         if(buttonPress[i]) {
-          // Serial.print("User pressed button: ");
-          // Serial.println(i);
+          Serial.print("User pressed button: ");
+          Serial.println(i);
           userSequence[userIndex] = i;
           userIndex++;
           buttonTimeNow += period;
@@ -221,15 +221,15 @@ void colors_module() {
   if (userIndex == 8) {
     bool correct = true;
     for (int i = 0; i < 8; i++) {
-      // Serial.println(userSequence[i]);
-      // Serial.println(sequence[i]);
-      // Serial.println();
+      Serial.println(userSequence[i]);
+      Serial.println(sequence[i]);
+      Serial.println();
       if (userSequence[i] != sequence[i]) {
-        // Serial.println(buttonPins[userSequence[i]]);
-        // Serial.println(buttonPins[sequence[i]]);
-        // Serial.println();
+        Serial.println("Wrong:");
+        Serial.println(buttonPins[userSequence[i]]);
+        Serial.println(buttonPins[sequence[i]]);
+        Serial.println();
         correct = false;
-        break;
       }
     }
 
